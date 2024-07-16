@@ -10,7 +10,7 @@ export const routes = [
         path: buildRoutePath('/tasks'),
         handler: (req, res) => {
             const { search } = req.query
-            
+
             const tasks = database.select('tasks', search ? {
                 title: search,
                 description: search,
@@ -23,19 +23,33 @@ export const routes = [
         method: 'POST',
         path: buildRoutePath('/tasks'),
         handler: (req, res) => {
-            const { title, description } = req.body
-            
+            const bodyContent = req.body
+
+            const expectedPropertiesFromBodyContent = ['title', 'description']
+
+            const filteredBodyProperties = Object.entries(bodyContent).filter(([key, value]) => {
+                return expectedPropertiesFromBodyContent.includes(key)
+            })
+
+            if (filteredBodyProperties.length < 1) {
+                return res.writeHead(400).end()
+            }
+
+            if (!bodyContent.title || !bodyContent.description) {
+                return res.writeHead(400).end()
+            }
+
             const date = new Date().toISOString()
-            
+
             const task = {
                 id: randomUUID(),
-                title,
-                description,
+                title: bodyContent.title,
+                description: bodyContent.description,
                 created_at: date,
                 updated_at: date,
                 completed_at: null,
             }
-            
+
             database.insert('tasks', task)
 
             return res.writeHead(201).end()
@@ -47,13 +61,27 @@ export const routes = [
         handler: (req, res) => {
             const { id } = req.params
 
-            const task = database.select('tasks').find((row) => row.id === id);
+            const task = database.select('tasks').find((row) => row.id === id)
 
             if (!task) {
                 return res.writeHead(404).end()
             }
 
             const bodyContent = req.body
+
+            const expectedPropertiesFromBodyContent = ['title', 'description']
+
+            const filteredBodyProperties = Object.entries(bodyContent).filter(([key, value]) => {
+                return expectedPropertiesFromBodyContent.includes(key)
+            })
+
+            if (filteredBodyProperties.length < 1) {
+                return res.writeHead(400).end()
+            }
+
+            if (!bodyContent.title && !bodyContent.description) {
+                return res.writeHead(400).end()
+            }
 
             const date = new Date().toISOString()
 
@@ -73,7 +101,7 @@ export const routes = [
         handler: (req, res) => {
             const { id } = req.params
 
-            const task = database.select('tasks').find((row) => row.id === id);
+            const task = database.select('tasks').find((row) => row.id === id)
 
             const date = new Date().toISOString()
 
@@ -82,8 +110,8 @@ export const routes = [
             }
 
             const taskCompleteDate = !!task.completed_at
-            ? null : date
-           
+                ? null : date
+
             database.update('tasks', id, {
                 completed_at: taskCompleteDate
             })
@@ -97,7 +125,7 @@ export const routes = [
         handler: (req, res) => {
             const { id } = req.params
 
-            const task = database.select('tasks').find((row) => row.id === id);
+            const task = database.select('tasks').find((row) => row.id === id)
 
             if (!task) {
                 return res.writeHead(404).end()
